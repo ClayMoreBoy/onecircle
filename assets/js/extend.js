@@ -859,6 +859,7 @@ var archiveInit = {
             //  发送 AJAX 请求
             $.ajax({
                 //  请求方式 post
+                url:gconf.index,
                 type: 'post',
                 //  url 获取点赞按钮的自定义 url 属性
                 //  发送的数据 cid，直接获取点赞按钮的 cid 属性
@@ -940,7 +941,7 @@ var archiveInit = {
                             } else {
                                 d = $('#comment-' + k, d).hide();
                                 if (!$(g).length)
-                                    $('.comment-detail').prepend("<h2 class='comment-num'>0 条评论<\/h2><ol class='comment-list'><\/ol>");
+                                    $('.comment-detail').prepend("<h6 class='comment-num'>0 条评论<\/h6><ol class='comment-list'><\/ol>");
                                 $(g).prepend(d)
                             }
                             $('#comment-' + k).fadeIn();
@@ -1055,7 +1056,7 @@ var recommendInit = {
     autoDirayWith: function (e) {
         var bgs = document.getElementsByClassName("circle-diary-bg");
         for (var i = 0; i < bgs.length; i++) {
-            bgs[i].style.height = bgs[i].offsetWidth;
+            bgs[i].style.height = bgs[i].offsetWidth + 'px';
         }
     },
     pjax_complete: function () {
@@ -1082,6 +1083,7 @@ var tagsManageInit = {
             if (!catiod > 0) return
             var selectId = $("#changeCircle").val()
             $.ajax({
+                url:gconf.index,
                 data: {
                     changeCircleCat: 1,
                     mid: catiod,
@@ -1179,7 +1181,7 @@ function postArticle(data, needRefresh) {
                 error: function (err) {
                     return $.message({
                         title: "提示",
-                        message: "err:" + err,
+                        message: "code:"+err.status+"err:" +err.responseText+ err,
                         type: "error"
                     })
                 }

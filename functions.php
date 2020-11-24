@@ -104,15 +104,22 @@ function getPostImg($archive)
 {
     $loading = Helper::options()->themeUrl('assets/img/loading.svg', 'onecircle');
     //  匹配 img 的 src 的正则表达式
-    $preg = '/<img.*?src=[\"|\']?(.*?)[\"|\']?\s.*?>/im';//匹配img标签的正则表达式
+    $preg = '/<img[\s\S]*?src\s*=\s*[\"|\'](.*?)[\"|\'][\s\S]*?>/im';//匹配img标签的正则表达式
     $preg2 = '/background-image:[ ]?url\([&quot;]*[\'"]?(.*?\.(?:png|jpg|jpeg|gif|bmp|webp|php))/i';//匹配背景的url的正则表达式
 //    $pregEchoBackImg = '/data-echo-background[ ]?=[ ]?[&quot;]*[\'"]?(.*?\.(?:png|jpg|jpeg|gif|bmp|webp))/i'; // 针对echo.js 匹配, 已经放弃使用
     $pregEchoImg = '/data-echo[ ]?=[ ]?[&quot;]*[\'"]?(.*?\..*?)[\'"]/i'; // 针对echo.js 匹配
+    $filter_plink = '/<img((?!plink).)*.src=[\"|\']?(.*?)[\"|\'][\s\S]*?>/i'; // 匹配不含 plink 的
 
     preg_match_all($preg, $archive->content, $allImg);//这里匹配所有的img
     // 过滤掉 loading 的img
-    foreach ($allImg[1] as $key => $imgurl){
-        if ($imgurl == $loading or empty($imgurl)){
+    foreach ($allImg[0] as $key =>$val){
+        preg_match($filter_plink,$val,$plinkarr);
+        if (empty($plinkarr)){ //含有 plink
+            unset($allImg[1][$key]);
+        }
+    }
+    foreach ($allImg[1] as $key =>$val){
+        if ($val == $loading or empty($val)){
             unset($allImg[1][$key]);
         }
     }
@@ -154,7 +161,7 @@ function parseFirstImg($content)
 {
     $loading = Helper::options()->defaultLoadingUrl();
     //  匹配 img 的 src 的正则表达式
-    $preg = '/<img.*?src=[\"|\']?(.*?)[\"|\']?\s.*?>/i';//匹配img标签的正则表达式
+    $preg = '/<img[\s\S]*?src\s*=\s*[\"|\'](.*?)[\"|\'][\s\S]*?>/i';//匹配img标签的正则表达式
     $preg2 = '/background-image:[ ]?url\([&quot;]*[\'"]?(.*?\.(?:png|jpg|jpeg|gif|bmp|webp))/i';//匹配背景的url的正则表达式
     $img = array();
     preg_match($preg, $content, $allImg);//这里匹配所有的img
