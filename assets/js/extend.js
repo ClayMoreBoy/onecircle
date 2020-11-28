@@ -164,14 +164,14 @@ var indexInput = {
                 type: "parsemeta",
                 url: val
             }, function (res) {
-                if (res) {
+                if (res.code) {
                     var inTextareaBlk = $(".sc-AxjAm.kgcKxQ")
                     inTextareaBlk.css("display", "block")
                     inTextareaBlk.attr("href", val)
-                    $(".sc-AxjAm.kgcKxQ .hHnMup").html(res)
+                    $(".sc-AxjAm.kgcKxQ .hHnMup").html(res.data)
                     that.additionArray = [] // reset additionArr
                     that.additionArray.push(val)
-                    that.additionArray.push(stripscript(res))
+                    that.additionArray.push(stripscript(res.data))
                     $(this_).text("添加")
                     // set other disable
                     that.addLinkBtn.siblings().addClass('btn-disable')
@@ -182,6 +182,13 @@ var indexInput = {
                         that.addLinkBtn.siblings().removeClass('btn-disable')
                         return false;
                     })
+                }else {
+                    $.message({
+                        title:"提示",
+                        message:"解析失败",
+                        type:"error"
+                    })
+                    console.log(res)
                 }
                 $(this_).text("添加")
             })
@@ -419,9 +426,14 @@ var indexInput = {
                 type: "warning"
             }), navLoginPsw.focus(), showbtn(), !1) : (loginSubmitForm.addClass("active"), $("#spin-login").addClass("show inline"),
                 $.post(gconf.oneaction, {type: "getsecurl", url: window.location.href}, function (res) {
-                    $("#Login_form").attr('action', res)
+                    if (!res.code) return $.message({
+                        title: "提示",
+                        message: "获取securl失败",
+                        type: "error"
+                    })
+                    $("#Login_form").attr('action', res.data)
                     $.ajax({
-                        url: res,
+                        url: res.data,
                         type: $(formThis).attr("method"),
                         data: $(formThis).serializeArray(),
                         error: function () {
@@ -480,7 +492,12 @@ var indexInput = {
             return
         }
         $.post(gconf.oneaction, {type: "getsecurl", url: window.location.href}, function (res) {
-            $("#Login_form").attr('action', res)
+            if (!res.code) return $.message({
+                title: "提示",
+                message: "获取securl失败",
+                type: "error"
+            })
+            $("#Login_form").attr('action', res.data)
             //
             // if (checkURL(res)){
             //
@@ -554,7 +571,6 @@ var archiveInit = {
         this.archAuthorTabsClickInit()
         this.iasInit()
         this.echojsInit()
-        this.scrollRevealInit()
 
     },
     postRepostArticle: function (posthref, excert, rbannerimg, repousername, repostext, category) {
@@ -794,7 +810,6 @@ var archiveInit = {
         // reinit click functions after 加载更多或者 tabs 切换
         archiveInit.fansFuncInit()
         indexInput.articleClickInit()
-        archiveInit.scrollRevealSync()
         archiveInit.echojsInit()
     },
     archAuthorTabsClickInit: function () {
@@ -838,7 +853,6 @@ var archiveInit = {
                                     $(".item-container").html(real_html)
                                     // reinit click functions
                                     archiveInit.archiveLoadRebindInit()
-                                    archiveInit.scrollRevealSync()
                                 }
                             } catch (e) {
                                 console.log(e)
@@ -986,20 +1000,6 @@ var archiveInit = {
             }
         });
     },
-    scrollRevealInit: function () { // scrollReveal js
-        ScrollReveal().reveal('.post-article', {
-            delay: 500,
-            useDelay: 'onload',
-            reset: true,
-            // distance: '100px',
-            origin: 'bottom',
-            // scale: 0.95,
-            duration: 800,
-        })
-    },
-    scrollRevealSync: function () {
-        ScrollReveal().sync();
-    },
     iasInit: function () { // 无限加载
         var a_pagelink = $(".a-pageLink .next")
         if (a_pagelink.length > 0) {
@@ -1031,7 +1031,6 @@ var archiveInit = {
                             a_pagelink.attr("style", "display:none");
                             $(".a-pageLink").append('<a href="javascript:;" rel="nofollow">加载完毕</a>');
                         }
-                        ScrollReveal().destroy()
                         archiveInit.archiveLoadRebindInit()
                     }
                 });
@@ -1046,7 +1045,6 @@ var archiveInit = {
         this.archAuthorTabShowInit()
         this.iasInit()
         this.echojsInit()
-        this.scrollRevealInit()
     }
 };
 var recommendInit = {
@@ -1156,10 +1154,10 @@ function postArticle(data, needRefresh) {
     $.post(gconf.oneaction, {
         type: 'getsecuritytoken'
     }, function (res) {
-        if (res !== 'error') {
+        if (res.code) {
             // console.log(res)
             $.ajax({
-                url: gconf.index+'/action/contents-post-edit?do=publish&_=' + res,
+                url: gconf.index+'/action/contents-post-edit?do=publish&_=' + res.data,
                 type: 'post',
                 data: data,
                 success: function (res) {
@@ -1186,7 +1184,14 @@ function postArticle(data, needRefresh) {
                     })
                 }
             })
+        }else {
+            $.message({
+                title: "提示",
+                message: "请检查插件是否正确安装！",
+                type: "error"
+            })
         }
+        return false
     })
 }
 
@@ -1296,12 +1301,28 @@ function submitForm(ele) {
         i.val("发送")
         return false
     }
+    // check if category in allcategories
+    var inAllcate = false
+    var cmid = $("#category").val()
+    if (typeof allCategories !== "undefined") {
+        allCategories.forEach(function (val) {
+            if (val[1] === cmid) inAllcate = true
+        })
+        if (inAllcate === false) cmid = allCategories[0][1] // 默认使用第一个的mid
+    }else {
+        $.message({
+            title:"提示",
+            message:"还没有创建圈子",
+            type:"error"
+        })
+        return false
+    }
     var data = {
         title: title.val(),
         text: val,
         'fields[articleType]': indexInput.nowtype,
         'markdown': 1,
-        'category[]': $("#category").val(),
+        'category[]': cmid,
         visibility: 'publish',
         allowComment: 1,
         allowPing: 1,
@@ -1371,7 +1392,6 @@ function videoToggle(idselector, this_, ev) {
     }
     $(idselector).collapse('toggle')
     ev.stopPropagation()
-    archiveInit.scrollRevealSync()
     return false
 }
 
